@@ -125,7 +125,7 @@ curl -XPOST '172.17.8.101:9200/_bulk?pretty' --data-binary @logs.jsonl
 then check the opreations above mentioned:
 
 curl '172.17.8.101:9200/_cat/indices?v'
-
+# check config of logstash: /opt/logstash/bin/logstash -t -f /etc/logstash/conf.d/11-nginx-access-log.conf
 output >>>
 health status index               pri rep docs.count docs.deleted store.size pri.store.size
 green  open   shakespeare           1   0     111396            0     16.2mb         16.2mb

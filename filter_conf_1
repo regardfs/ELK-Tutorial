@@ -1,0 +1,95 @@
+1. Mutate: change data type
+
+example:
+
+filter {
+    mutate {
+        convert => ["request_time", "float"]
+    }
+}
+
+>>> tips：mutate 除了转换简单的字符值，还支持对数组类型的字段进行转换，即将 ["1","2"] 转换成 [1,2]。但不支持对哈希类型的字段做类似处理。
+有这方面需求的可以采用稍后讲述的 filters/ruby 插件完成。
+
+2. GeoIP: ip location
+
+example:
+
+filter {
+    geoip {
+        source => "message"
+    }
+}
+
+resule:
+
+{
+       "message" => "183.60.92.253",
+      "@version" => "1",
+    "@timestamp" => "2014-08-07T10:32:55.610Z",
+          "host" => "raochenlindeMacBook-Air.local",
+         "geoip" => {
+                      "ip" => "183.60.92.253",
+           "country_code2" => "CN",
+           "country_code3" => "CHN",
+            "country_name" => "China",
+          "continent_code" => "AS",
+             "region_name" => "30",
+               "city_name" => "Guangzhou",
+                "latitude" => 23.11670000000001,
+               "longitude" => 113.25,
+                "timezone" => "Asia/Chongqing",
+        "real_region_name" => "Guangdong",
+                "location" => [
+            [0] 113.25,
+            [1] 23.11670000000001
+        ]
+    }
+}
+
+>>> tips: 1. GeoIP 库数据较多，如果你不需要这么多内容，可以通过 fields 选项指定自己所需要的。下例为全部可选内容：
+filter {
+    geoip {
+        fields => ["city_name", "continent_code", "country_code2", "country_code3", "country_name", "dma_code", "ip", \
+        "latitude", "longitude", "postal_code", "region_name", "timezone"]
+    }
+}
+
+>>> tips: 2. 需要注意的是：geoip.location 是 logstash 通过 latitude 和 longitude 额外生成的数据。所以，如果你是想要经纬度又不想重
+复数据的话，应该像下面这样做：
+filter {
+    geoip {
+        fields => ["city_name", "country_code2", "country_name", "latitude", "longitude", "region_name"]
+        remove_field => ["[geoip][latitude]", "[geoip][longitude]"]
+    }
+}
+
+3. Grok: regex in ELK
+Grok 是 Logstash 最重要的插件。你可以在 grok 里预定义好命名正则表达式，在稍后(grok参数或者其他正则表达式里)引用它。
+
+grammar:
+>>> \s+(?<request_time>\d+(?:\.\d+)?)\s+ (python: (?P<name>pattern))
+
+example:
+
+input {stdin{}}
+filter {
+    grok {
+        match => {
+            "message" => "\s+(?<request_time>\d+(?:\.\d+)?)\s+"
+        }
+    }
+}
+output {stdout{codec => rubydebug}}
+
+input:  "begin 123.456 end"
+
+result:
+
+{
+         "message" => "begin 123.456 end",
+        "@version" => "1",
+      "@timestamp" => "2014-08-09T11:55:38.186Z",
+            "host" => "raochenlindeMacBook-Air.local",
+    "request_time" => "123.456"
+}

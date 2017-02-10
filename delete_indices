@@ -1,0 +1,1 @@
+ curator_cli --config /dev/null  --host 172.17.8.101 delete_indices --filter_list '[{"filtertype":"pattern","kind":"prefix","value":"nginx"}]'
