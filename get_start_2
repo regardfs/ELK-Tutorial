@@ -1,0 +1,42 @@
+# here i want to introduce a very usual senario or you could call it error：
+# when u want to create a index when you first logging into kibana web, you should create an index pattern, and you may
+# get info like in you website or log:
+"""
+Warning No default index pattern. You must select or create one to continue.
+...
+Unable to fetch mapping. Do you have indices matching the pattern?
+"""
+# this is because you do not have any data in your logstash storiage, you could initial data with your own source or
+# just go through "get_start_1" tutorial.
+# When you define an index pattern, indices that match that pattern must exist in Elasticsearch.
+# Those indices must contain data.
+
+Let's create our index parttern:
+Shakespeare data set has an index named shakespeare, and the accounts data set has an index named bank
+>>
+health status index               pri rep docs.count docs.deleted store.size pri.store.size
+green  open   shakespeare           1   0     111396            0     16.2mb         16.2mb
+green  open   logstash-2015.05.20   1   0       4750            0     20.9mb         20.9mb
+green  open   bank                  1   0       1000            0    374.1kb        374.1kb
+
+An index pattern is a string with optional wildcards that can match multiple indices. For example, in the common logging
+use case, a typical index name contains the date in YYYY.MM.DD format, and an index pattern for May would look something
+like logstash-2015.05*.
+
+tips: we could see that above log have index of "shakespeare, logstash-2015.05.20, bank", which you may find in
+get_start_1 file, c? that is the index.
+"""
+curl -XPUT http://172.17.8.101:9200/logstash-2015.05.20 -d
+curl -XPUT http://172.17.8.101:9200/shakespeare
+curl -XPOST '172.17.8.101:9200/bank/account/_bulk?pretty'
+"""
+
+Click the Settings tab, then the Indices tab.
+Click Add New to define a new index pattern:
+1. Two of the sample data sets, the Shakespeare plays and the financial accounts, don’t contain time-series data. Make
+sure the Index contains time-based events box is >>>unchecked<<< when you create index patterns for these data sets.
+2. Specify shakes* as the index pattern for the Shakespeare data set and click Create to define the index pattern, then
+define a second index pattern named ba*.
+3. The Logstash data set does contain time-series data, so after clicking Add New to define the index for this data set,
+make sure the Index contains time-based events box is checked and select the @timestamp field from the Time-field name
+drop-down.

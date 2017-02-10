@@ -1,0 +1,136 @@
+# Original url: https://www.elastic.co/guide/en/kibana/current/getting-started.html
+
+1. Download three files that this sample needing(already download in files)
+shakespeare.json
+{
+    "line_id": INT,
+    "play_name": "String",
+    "speech_number": INT,
+    "line_number": "String",
+    "speaker": "String",
+    "text_entry": "String",
+}
+
+accounts.zip, data structure like:
+{
+    "account_number": INT,
+    "balance": INT,
+    "firstname": "String",
+    "lastname": "String",
+    "age": INT,
+    "gender": "M or F",
+    "address": "String",
+    "employer": "String",
+    "email": "String",
+    "city": "String",
+    "state": "String"
+}
+
+logs.jsonl.gz: notable ones in logs which are useful and data structure like:
+{
+    "memory": INT,
+    "geo.coordinates": "geo_point"
+    "@timestamp": "date"
+}
+
+
+2. Unzip file of accounts.zip、logs.jsonl.gz
+unzip accounts.zip
+gunzip logs.jsonl.gz
+
+3. Set up mappings for the fileds
+Before we load the Shakespeare and logs data sets, we need to set up mappings for the fields.
+Mapping divides the documents in the index into logical groups and specifies a field’s characteristics,
+such as the field’s searchability or whether or not it’s tokenized, or broken up into separate words.
+(在导入上面的数据前，先创建数据域的mappings，mapping按照索引区分文档为逻辑组，并定义每个域的属性，比如是否searchability或者tokenized
+，或者被拆分为独立的词组)
+
+create mapping：
+for shakespeare.json:
+curl -XPUT http://172.17.8.101:9200/shakespeare -d '
+{
+ "mappings" : {
+  "_default_" : {
+   "properties" : {
+    "speaker" : {"type": "string", "index" : "not_analyzed" },
+    "play_name" : {"type": "string", "index" : "not_analyzed" },
+    "line_id" : { "type" : "integer" },
+    "speech_number" : { "type" : "integer" }
+   }
+  }
+ }
+}
+';
+
+for log:
+curl -XPUT http://172.17.8.101:9200/logstash-2015.05.18 -d '
+{
+  "mappings": {
+    "log": {
+      "properties": {
+        "geo": {
+          "properties": {
+            "coordinates": {
+              "type": "geo_point"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+';
+
+curl -XPUT http://172.17.8.101:9200/logstash-2015.05.19 -d '
+{
+  "mappings": {
+    "log": {
+      "properties": {
+        "geo": {
+          "properties": {
+            "coordinates": {
+              "type": "geo_point"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+';
+
+curl -XPUT http://172.17.8.101:9200/logstash-2015.05.20 -d '
+{
+  "mappings": {
+    "log": {
+      "properties": {
+        "geo": {
+          "properties": {
+            "coordinates": {
+              "type": "geo_point"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+';
+
+here we use Elasticsearch bulk API to load the data sets with the following commands:
+curl -XPOST '172.17.8.101:9200/bank/account/_bulk?pretty' --data-binary @accounts.json
+curl -XPOST '172.17.8.101:9200/shakespeare/_bulk?pretty' --data-binary @shakespeare.json
+curl -XPOST '172.17.8.101:9200/_bulk?pretty' --data-binary @logs.jsonl
+
+then check the opreations above mentioned:
+
+curl '172.17.8.101:9200/_cat/indices?v'
+
+output >>>
+health status index               pri rep docs.count docs.deleted store.size pri.store.size
+green  open   shakespeare           1   0     111396            0     16.2mb         16.2mb
+green  open   logstash-2015.05.20   1   0       4750            0     20.9mb         20.9mb
+green  open   bank                  1   0       1000            0    374.1kb        374.1kb
+yellow open   .kibana               1   1          1            0      3.1kb          3.1kb
+green  open   logstash-2015.05.18   1   0       4631            0     19.8mb         19.8mb
+green  open   logstash-2015.05.19   1   0       4624            0     20.3mb         20.3mb
